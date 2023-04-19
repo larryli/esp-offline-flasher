@@ -1,5 +1,8 @@
 #include "led.h"
+#include "esp_log.h"
 #include "led_indicator.h"
+
+static const char *TAG = "led";
 
 static const blink_step_t led_ready_step[] = {
     {LED_BLINK_HOLD, LED_STATE_ON, 50},
@@ -56,13 +59,16 @@ void led_init(void)
         .blink_list_num = LED_STATUS_MAX,
     };
     led_handle = led_indicator_create(&config);
-
-    led_indicator_start(led_handle, latest);
+    if (led_handle == NULL) {
+        ESP_LOGE(TAG, "Onboard led create failed");
+    } else {
+        led_indicator_start(led_handle, latest);
+    }
 }
 
 void led_set_status(led_status_t status)
 {
-    if (status == latest) {
+    if (led_handle == NULL || status == latest) {
         return;
     }
     led_indicator_stop(led_handle, latest);

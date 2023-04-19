@@ -1,3 +1,4 @@
+#include "btn.h"
 #include "driver/gpio.h"
 #include "esp_check.h"
 #include "esp_log.h"
@@ -9,6 +10,8 @@
 #include "tusb_msc_storage.h"
 
 static const char *TAG = "main";
+
+static flash_args_t *flash_args = NULL;
 
 /* TinyUSB descriptors ********************************* */
 #ifdef CONFIG_ENABLE_CDC
@@ -116,10 +119,12 @@ static void storage_mount_changed(tinyusb_msc_event_t *event)
         ESP_LOGI(TAG, "Storage mounted");
         led_set_status(LED_STATUS_READY);
 
-        flash_args_t *args = flash_args_find(CONFIG_TINYUSB_MSC_MOUNT_PATH);
-        if (args != NULL) {
-            flash_args_dump(args);
-            flash_args_free(args);
+        if (flash_args != NULL) {
+            flash_args_free(flash_args);
+        }
+        flash_args = flash_args_find(CONFIG_TINYUSB_MSC_MOUNT_PATH);
+        if (flash_args != NULL) {
+            flash_args_dump(flash_args);
         } else {
             led_set_status(LED_STATUS_ERROR);
         }
@@ -129,9 +134,21 @@ static void storage_mount_changed(tinyusb_msc_event_t *event)
     }
 }
 
+static void flash(void)
+{
+    if (tinyusb_msc_storage_in_use_by_usb_host()) {
+        ESP_LOGW(TAG, "Storage exposed over USB, please remove it from PC.");
+    } else {
+        led_set_status(LED_STATUS_FLASH);
+        ESP_LOGI(TAG, "Flashing...");
+        flash_args_dump(flash_args);
+    }
+}
+
 void app_main(void)
 {
     led_init();
+    btn_init(flash, NULL, NULL);
 
     ESP_LOGI(TAG, "Initializing storage...");
 
@@ -140,7 +157,8 @@ void app_main(void)
 
     const tinyusb_msc_spiflash_config_t config_spi = {
         .wl_handle = wl_handle,
-        .callback_mount_changed = storage_mount_changed};
+        .callback_mount_changed = storage_mount_changed,
+    };
     ESP_ERROR_CHECK(tinyusb_msc_storage_init_spiflash(&config_spi));
 
     // mounted in the app by default
