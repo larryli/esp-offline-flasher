@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+#include "esp_loader.h"
+
 typedef struct {
     uint32_t addr;
     char *path;
@@ -9,6 +11,7 @@ typedef struct {
 } flash_file_t;
 
 typedef struct {
+    target_chip_t chip;
     int flash_files_size;
     flash_file_t flash_files[];
 } flash_args_t;

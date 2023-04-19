@@ -11,6 +11,68 @@
 
 static const char *TAG = "flash_args";
 
+static target_chip_t parse_chip(char *str)
+{
+    if (strncmp("esp", str, 3) == 0) {
+        if (strncmp("32", str + 3, 2) == 0) {
+            switch (str[5]) {
+            case '\0':
+                return ESP32_CHIP;
+            case 'c':
+                if (strcmp("2", str + 6) == 0) {
+                    return ESP32C2_CHIP;
+                } else if (strcmp("3", str + 6) == 0) {
+                    return ESP32C3_CHIP;
+                }
+                break;
+            case 's':
+                if (strcmp("2", str + 6) == 0) {
+                    return ESP32S2_CHIP;
+                } else if (strcmp("3", str + 6) == 0) {
+                    return ESP32S3_CHIP;
+                }
+                break;
+            case 'h':
+                if (strcmp("2", str + 6) == 0) {
+                    return ESP32H2_CHIP;
+                } else if (strcmp("4", str + 6) == 0) {
+                    return ESP32H4_CHIP;
+                }
+                break;
+            default:
+                break;
+            }
+        } else if (strcmp("8266", str + 3) == 0) {
+            return ESP8266_CHIP;
+        }
+    }
+    return ESP_UNKNOWN_CHIP;
+}
+
+static const char *dump_chip(target_chip_t chip)
+{
+    switch (chip) {
+    case ESP8266_CHIP:
+        return "esp8266";
+    case ESP32_CHIP:
+        return "esp32";
+    case ESP32S2_CHIP:
+        return "esp32s2";
+    case ESP32C3_CHIP:
+        return "esp32c3";
+    case ESP32S3_CHIP:
+        return "esp32s3";
+    case ESP32C2_CHIP:
+        return "esp32c2";
+    case ESP32H4_CHIP:
+        return "esp32h4";
+    case ESP32H2_CHIP:
+        return "esp32h2";
+    default:
+        return "UNKNOWN";
+    }
+}
+
 static flash_args_t *get_from_json(const char *json, size_t length,
                                    const char *base_path)
 {
@@ -42,6 +104,7 @@ static flash_args_t *get_from_json(const char *json, size_t length,
         goto failed;
     }
     memset(args, 0, s);
+    args->chip = ESP_UNKNOWN_CHIP;
     args->flash_files_size = size;
     int n = 0;
     for (const cJSON *i = flash_files->child; i != NULL; i = i->next) {
@@ -49,7 +112,8 @@ static flash_args_t *get_from_json(const char *json, size_t length,
         char *path = malloc(s);
         if (path == NULL) {
             ESP_LOGE(TAG,
-                     "Malloc flash_args.flash_files[%d].path %d bytes failed\n",
+                     "Malloc flash_args.flash_files[%d].path %d bytes "
+                     "failed\n",
                      n, s);
             goto failed;
         }
@@ -66,6 +130,13 @@ static flash_args_t *get_from_json(const char *json, size_t length,
         args->flash_files[n].addr = strtoul(i->string, NULL, 0);
         args->flash_files[n].path = path;
         n++;
+    }
+    const cJSON *extra = cJSON_GetObjectItem(root, "extra_esptool_args");
+    if (extra != NULL) {
+        const cJSON *chip = cJSON_GetObjectItem(extra, "chip");
+        if (chip != NULL) {
+            args->chip = parse_chip(chip->valuestring);
+        }
     }
 
     cJSON_Delete(root);
@@ -184,6 +255,7 @@ void flash_args_dump(flash_args_t *args)
     if (args == NULL) {
         return;
     }
+    ESP_LOGI(TAG, "Flash chip: %s(%d)", dump_chip(args->chip), args->chip);
     ESP_LOGI(TAG, "Flash %d file(s):", args->flash_files_size);
     for (int i = 0; i < args->flash_files_size; i++) {
         printf("  - \033[1;37maddr\033[0m: \033[1;36m0x%lx\033[0m\n"
