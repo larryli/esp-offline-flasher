@@ -12,11 +12,12 @@ dependencies:
       type: service
     version: 0.1.0
   espressif/esp-serial-flasher:
-    component_hash: c999ed40f9ff667cc037c6bb6f053ca083228587cee6ef1169184c2c124823db
+    component_hash: 6020046b7148e887c7e729522e61e8bb63c28a5438c779c1f2a47c48b036f391
     source:
-      service_url: https://api.components.espressif.com/
-      type: service
-    version: 0.0.8
+      git: https://github.com/larryli/esp-serial-flasher.git
+      path: .
+      type: git
+    version: 0e95d28185322b5a81508225905e1a54b88c6a78
   espressif/esp_tinyusb:
     component_hash: 4d5c0bdd27386cfafeca6f3d0d8edc44b24218e555b0784a491a47cc13b6a95c
     source:
@@ -41,6 +42,6 @@ dependencies:
     source:
       type: idf
     version: 5.0.1
-manifest_hash: 65a567719445b483db35e8dcb6b86c5a2c4a0e9e949bb2e31e8b255fe14e1ee7
+manifest_hash: 201e7c1eba4114eb0acf2faf8e758f1c2af500a2e5df3adbd94124eba9e5456b
 target: esp32s2
 version: 1.0.0
