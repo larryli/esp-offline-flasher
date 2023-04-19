@@ -96,18 +96,18 @@ static void storage_mount_changed(tinyusb_msc_event_t *event)
 {
     if (event->mount_changed_data.is_mounted) {
         ESP_LOGI(TAG, "Storage mounted");
-        led_ready();
+        led_set_status(LED_STATUS_READY);
 
         flash_args_t *args = flash_args_find(CONFIG_TINYUSB_MSC_MOUNT_PATH);
         if (args != NULL) {
             flash_args_dump(args);
             flash_args_free(args);
         } else {
-            led_error();
+            led_set_status(LED_STATUS_ERROR);
         }
     } else {
         ESP_LOGI(TAG, "Storage unmounted");
-        led_usb();
+        led_set_status(LED_STATUS_USB);
     }
 }
 

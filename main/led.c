@@ -1,7 +1,5 @@
-#include "esp_log.h"
+#include "led.h"
 #include "led_indicator.h"
-
-// static const char *TAG = "led";
 
 static const blink_step_t led_ready_step[] = {
     {LED_BLINK_HOLD, LED_STATE_ON, 50},
@@ -34,23 +32,16 @@ static const blink_step_t led_error_step[] = {
     {LED_BLINK_LOOP, 0, 0},
 };
 
-typedef enum {
-    LED_TYPE_ERROR,
-    LED_TYPE_FLASH,
-    LED_TYPE_USB,
-    LED_TYPE_READY,
-    LED_TYPE_MAX,
-} led_type_t;
-
 static blink_step_t const *led_indicator_blink_lists[] = {
-    [LED_TYPE_READY] = led_ready_step,
-    [LED_TYPE_USB] = led_usb_step,
-    [LED_TYPE_FLASH] = led_flash_step,
-    [LED_TYPE_ERROR] = led_error_step,
-    [LED_TYPE_MAX] = NULL,
+    [LED_STATUS_ERROR] = led_error_step,
+    [LED_STATUS_FLASH] = led_flash_step,
+    [LED_STATUS_USB] = led_usb_step,
+    [LED_STATUS_READY] = led_ready_step,
+    [LED_STATUS_MAX] = NULL,
 };
 
 static led_indicator_handle_t led_handle = NULL;
+static led_status_t latest = LED_STATUS_READY;
 
 void led_init(void)
 {
@@ -62,26 +53,19 @@ void led_init(void)
         .mode = LED_GPIO_MODE,
         .led_indicator_gpio_config = &gpio_config,
         .blink_lists = led_indicator_blink_lists,
-        .blink_list_num = LED_TYPE_MAX,
+        .blink_list_num = LED_STATUS_MAX,
     };
     led_handle = led_indicator_create(&config);
 
-    led_indicator_start(led_handle, LED_TYPE_READY);
+    led_indicator_start(led_handle, latest);
 }
 
-void led_ready(void)
+void led_set_status(led_status_t status)
 {
-    led_indicator_preempt_start(led_handle, LED_TYPE_READY);
-}
-
-void led_usb(void) { led_indicator_preempt_start(led_handle, LED_TYPE_USB); }
-
-void led_flash(void)
-{
-    led_indicator_preempt_start(led_handle, LED_TYPE_FLASH);
-}
-
-void led_error(void)
-{
-    led_indicator_preempt_start(led_handle, LED_TYPE_ERROR);
+    if (status == latest) {
+        return;
+    }
+    led_indicator_stop(led_handle, latest);
+    latest = status;
+    led_indicator_start(led_handle, latest);
 }
