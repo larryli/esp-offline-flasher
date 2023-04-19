@@ -1,4 +1,16 @@
 dependencies:
+  espressif/button:
+    component_hash: f15af2d7b022536fa1f1328a6a9cd48f4d893dbeed3b3e91d32566ad8002570e
+    source:
+      service_url: https://api.components.espressif.com/
+      type: service
+    version: 2.5.1
+  espressif/cmake_utilities:
+    component_hash: 6983933aa165d5c1bd8ff3716f8873b4dd8577020d9176d22d8568b139ff8753
+    source:
+      service_url: https://api.components.espressif.com/
+      type: service
+    version: 0.1.0
   espressif/esp-serial-flasher:
     component_hash: c999ed40f9ff667cc037c6bb6f053ca083228587cee6ef1169184c2c124823db
     source:
@@ -12,6 +24,12 @@ dependencies:
       path: usb/esp_tinyusb
       type: git
     version: 8849aede8307028b283194ab838bbed469ecf7ba
+  espressif/led_indicator:
+    component_hash: daa844acf7886b78fa4ea25c9dd6a4fb3a83f793a307187026be1c237fba632a
+    source:
+      service_url: https://api.components.espressif.com/
+      type: service
+    version: 0.3.0
   espressif/tinyusb:
     component_hash: 820a2eef39c7ff0b810e859efd7035a4e5b9b44e77c49020a50ef0668fc941ae
     source:
@@ -23,6 +41,6 @@ dependencies:
     source:
       type: idf
     version: 5.0.1
-manifest_hash: dfc86f8426c64a3e4054bc8366fc0bd59b9542a24d9774d16ae015f4440b324e
+manifest_hash: 65a567719445b483db35e8dcb6b86c5a2c4a0e9e949bb2e31e8b255fe14e1ee7
 target: esp32s2
 version: 1.0.0

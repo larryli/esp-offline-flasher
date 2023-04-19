@@ -1,11 +1,14 @@
-#include <dirent.h>
-#include <errno.h>
 #include "driver/gpio.h"
 #include "esp_check.h"
+#include "esp_log.h"
 #include "tinyusb.h"
 #include "tusb_cdc_acm.h"
 #include "tusb_console.h"
 #include "tusb_msc_storage.h"
+#include <dirent.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <sys/stat.h>
 
 static const char *TAG = "main";
 
@@ -68,30 +71,54 @@ static char const *string_desc_arr[] = {
 };
 /********************************* TinyUSB descriptors ************/
 
-// mount the partition and show all the files in BASE_PATH
-static void _mount(void)
+static void _dir(char *dir, int indent)
 {
-    ESP_LOGI(TAG, "Mount storage...");
-    ESP_ERROR_CHECK(tinyusb_msc_storage_mount(CONFIG_TINYUSB_MSC_MOUNT_PATH));
-
-    // List all the files in this directory
-    ESP_LOGI(TAG, "\nls command output:");
     struct dirent *d;
-    DIR *dh = opendir(CONFIG_TINYUSB_MSC_MOUNT_PATH);
+    DIR *dh = opendir(dir);
     if (!dh) {
         if (errno == ENOENT) {
             // If the directory is not found
-            ESP_LOGE(TAG, "Directory doesn't exist %s", CONFIG_TINYUSB_MSC_MOUNT_PATH);
+            ESP_LOGE(TAG, "Directory doesn't exist %s",
+                     CONFIG_TINYUSB_MSC_MOUNT_PATH);
         } else {
             // If the directory is not readable then throw error and exit
-            ESP_LOGE(TAG, "Unable to read directory %s", CONFIG_TINYUSB_MSC_MOUNT_PATH);
+            ESP_LOGE(TAG, "Unable to read directory %s",
+                     CONFIG_TINYUSB_MSC_MOUNT_PATH);
         }
         return;
     }
     // While the next entry is not readable we will print directory files
     while ((d = readdir(dh)) != NULL) {
-        printf("%s\n", d->d_name);
+        char *buf = malloc(strlen(dir) + strlen(d->d_name) + 2);
+        strcpy(buf, dir);
+        strcat(buf, "/");
+        strcat(buf, d->d_name);
+        if (buf != NULL) {
+            for (int i = 0; i < indent; i++) {
+                printf("  ");
+            }
+            if (d->d_type == DT_DIR) {
+                printf("\033[1;34m%s\033[0m\n", d->d_name);
+                _dir(buf, indent + 1);
+            } else if (d->d_type == DT_REG) {
+                struct stat st;
+                if (stat(buf, &st) == 0) {
+                    printf("%s\t\033[0;36m%ld\033[0m\n", d->d_name, st.st_size);
+                } else {
+                    printf("%s\n", d->d_name);
+                }
+            }
+            free(buf);
+        }
     }
+    closedir(dh);
+}
+
+// mount the partition and show all the files in BASE_PATH
+static void _mount(void)
+{
+    ESP_LOGI(TAG, "Mount storage...");
+    ESP_ERROR_CHECK(tinyusb_msc_storage_mount(CONFIG_TINYUSB_MSC_MOUNT_PATH));
     return;
 }
 
@@ -114,17 +141,21 @@ static void storage_mount_changed(tinyusb_msc_event_t *event)
 {
     if (event->mount_changed_data.is_mounted) {
         ESP_LOGI(TAG, "Storage mounted");
-        gpio_set_level(CONFIG_LED_GPIO, 0);
+        gpio_set_level(CONFIG_BOARD_LED_GPIO, 0);
+
+        // List all the files in this directory
+        ESP_LOGI(TAG, "\nList file system:");
+        _dir(CONFIG_TINYUSB_MSC_MOUNT_PATH, 0);
     } else {
         ESP_LOGI(TAG, "Storage unmounted");
-        gpio_set_level(CONFIG_LED_GPIO, 1);
+        gpio_set_level(CONFIG_BOARD_LED_GPIO, 1);
     }
 }
 
 void app_main(void)
 {
-    gpio_reset_pin(CONFIG_LED_GPIO);
-    gpio_set_direction(CONFIG_LED_GPIO, GPIO_MODE_OUTPUT);
+    gpio_reset_pin(CONFIG_BOARD_LED_GPIO);
+    gpio_set_direction(CONFIG_BOARD_LED_GPIO, GPIO_MODE_OUTPUT);
 
     ESP_LOGI(TAG, "Initializing storage...");
 

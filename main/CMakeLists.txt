@@ -1,5 +1,7 @@
-set(srcs "main.c")
-set(requires fatfs console)
+file(GLOB srcs
+    "*.c"
+)
+set(requires fatfs)
 
 if(CONFIG_EXAMPLE_STORAGE_MEDIA_SPIFLASH)
     list(APPEND requires wear_levelling)
