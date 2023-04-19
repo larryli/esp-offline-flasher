@@ -1,5 +1,6 @@
 #include "btn.h"
 #include "esp_log.h"
+#include "findfile.h"
 #include "flash_args.h"
 #include "led.h"
 #include "usb.h"
@@ -17,10 +18,23 @@ static void storage_mount_changed(bool mounted)
         if (flash_args != NULL) {
             flash_args_free(flash_args);
         }
-        flash_args = flash_args_find(CONFIG_TINYUSB_MSC_MOUNT_PATH);
-        if (flash_args != NULL) {
-            flash_args_dump(flash_args);
-        } else {
+        const char *dir = CONFIG_TINYUSB_MSC_MOUNT_PATH;
+        const char *fname = "flasher_args.json";
+        findfile_t *ff = findfile(dir, fname);
+        if (ff != NULL) {
+            flash_args = flash_args_from_json(ff->buf, ff->size, ff->dir);
+            if (flash_args != NULL) {
+                flash_args_dump(flash_args);
+            }
+            free(ff->buf);
+            if (ff->dir != dir) {
+                free(ff->dir);
+            }
+            free(ff);
+        }
+        if (flash_args == NULL) {
+            ESP_LOGE(TAG, "Cannot find \"%s\" file in the \"%s\" directory",
+                     fname, dir);
             led_set_status(LED_STATUS_ERROR);
         }
     } else {

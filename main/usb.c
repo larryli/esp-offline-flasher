@@ -123,6 +123,7 @@ void usb_init(usb_cb_t chg)
 
     static wl_handle_t wl_handle = WL_INVALID_HANDLE;
     ESP_ERROR_CHECK(storage_init_spiflash(&wl_handle));
+    chg_cb = chg;
 
     const tinyusb_msc_spiflash_config_t config_spi = {
         .wl_handle = wl_handle,
@@ -144,7 +145,6 @@ void usb_init(usb_cb_t chg)
         .configuration_descriptor = desc_configuration,
     };
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
-    chg_cb = chg;
 #ifdef CONFIG_ENABLE_CDC
     tinyusb_config_cdcacm_t acm_cfg = {
         0}; // the configuration uses default values

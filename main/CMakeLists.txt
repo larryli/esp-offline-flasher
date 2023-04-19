@@ -1,4 +1,4 @@
-set(srcs "btn.c" "flash_args.c" "led.c" "main.c" "usb.c")
+set(srcs "btn.c" "findfile.c" "flash_args.c" "led.c" "main.c" "usb.c")
 set(requires fatfs json)
 
 if(CONFIG_EXAMPLE_STORAGE_MEDIA_SPIFLASH)
