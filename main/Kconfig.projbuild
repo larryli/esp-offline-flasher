@@ -43,4 +43,12 @@ menu "Offline Flasher"
 
     endmenu
 
+    menu "More Configure"
+
+        config ENABLE_CDC
+            bool "Enable USB serial port (CDC)"
+            default true
+
+    endmenu
+
 endmenu

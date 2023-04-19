@@ -10,17 +10,31 @@
 
 static const char *TAG = "main";
 
-/* TinyUSB descriptors
- ********************************************************************* */
+/* TinyUSB descriptors ********************************* */
+#ifdef CONFIG_ENABLE_CDC
 #define TUSB_DESC_TOTAL_LEN                                                    \
     (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_MSC_DESC_LEN)
+#else
+#define TUSB_DESC_TOTAL_LEN (TUD_CONFIG_DESC_LEN + TUD_MSC_DESC_LEN)
+#endif
 
-enum { ITF_NUM_CDC = 0, ITF_NUM_CDC_DATA, ITF_NUM_MSC, ITF_NUM_TOTAL };
+enum {
+#ifdef CONFIG_ENABLE_CDC
+    ITF_NUM_CDC = 0,
+    ITF_NUM_CDC_DATA,
+    ITF_NUM_MSC,
+#else
+    ITF_NUM_MSC = 0,
+#endif
+    ITF_NUM_TOTAL
+};
 
 enum {
     EP_EMPTY = 0,
+#ifdef CONFIG_ENABLE_CDC
     EPNUM_0_CDC_NOTIF,
     EPNUM_0_CDC,
+#endif
     EPNUM_MSC,
 };
 
@@ -30,10 +44,12 @@ static uint8_t const desc_configuration[] = {
     TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, TUSB_DESC_TOTAL_LEN,
                           TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
 
+#ifdef CONFIG_ENABLE_CDC
     // Interface number, string index, EP notification address and size, EP data
     // address (out, in) and size.
     TUD_CDC_DESCRIPTOR(ITF_NUM_CDC, 4, 0x80 | EPNUM_0_CDC_NOTIF, 8, EPNUM_0_CDC,
                        0x80 | EPNUM_0_CDC, CFG_TUD_CDC_EP_BUFSIZE),
+#endif
 
     // Interface number, string index, EP Out & EP In address, EP size
     TUD_MSC_DESCRIPTOR(ITF_NUM_MSC, 5, EPNUM_MSC, 0x80 | EPNUM_MSC,
@@ -63,11 +79,13 @@ static char const *string_desc_arr[] = {
     CONFIG_TINYUSB_DESC_MANUFACTURER_STRING, // 1: Manufacturer
     CONFIG_TINYUSB_DESC_PRODUCT_STRING,      // 2: Product
     CONFIG_TINYUSB_DESC_SERIAL_STRING,       // 3: Serials, should use chip ID
-    CONFIG_TINYUSB_DESC_CDC_STRING,          // 4: CDC Interface
-    CONFIG_TINYUSB_DESC_MSC_STRING,          // 5: MSC Interface
+#ifdef CONFIG_ENABLE_CDC
+    CONFIG_TINYUSB_DESC_CDC_STRING, // 4: CDC Interface
+#endif
+    CONFIG_TINYUSB_DESC_MSC_STRING, // 5: MSC Interface
     NULL // NULL: Must be last. Indicates end of array
 };
-/********************************* TinyUSB descriptors ************/
+/********************************* TinyUSB descriptors */
 
 // mount the partition and show all the files in BASE_PATH
 static void _mount(void)
@@ -139,10 +157,12 @@ void app_main(void)
         .configuration_descriptor = desc_configuration,
     };
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
+#ifdef CONFIG_ENABLE_CDC
     tinyusb_config_cdcacm_t acm_cfg = {
         0}; // the configuration uses default values
     ESP_ERROR_CHECK(tusb_cdc_acm_init(&acm_cfg));
 
     esp_tusb_init_console(TINYUSB_CDC_ACM_0); // log to usb
+#endif
     ESP_LOGI(TAG, "USB initialization DONE");
 }
