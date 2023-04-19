@@ -1,0 +1,10 @@
+menu "Offline Flasher Configuration"
+
+    orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
+
+    config LED_GPIO
+        int "Led GPIO number"
+        range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+        default 15
+
+endmenu

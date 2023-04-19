@@ -1,0 +1,7 @@
+## IDF Component Manager Manifest File
+dependencies:
+  espressif/esp_tinyusb:
+    path: usb/esp_tinyusb
+    git: https://github.com/larryli/idf-extra-components.git
+  espressif/esp-serial-flasher: ^0.0.8
+  idf: "^5.0"
