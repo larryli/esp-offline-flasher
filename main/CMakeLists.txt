@@ -5,7 +5,7 @@ if(CONFIG_EXAMPLE_STORAGE_MEDIA_SPIFLASH)
 endif()
 
 idf_component_register(
-    SRCS "main.c" "flash_args.c"
+    SRCS "led.c" "main.c" "flash_args.c"
     INCLUDE_DIRS .
     REQUIRES "${requires}"
 )

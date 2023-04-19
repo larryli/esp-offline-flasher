@@ -2,6 +2,7 @@
 #include "esp_check.h"
 #include "esp_log.h"
 #include "flash_args.h"
+#include "led.h"
 #include "tinyusb.h"
 #include "tusb_cdc_acm.h"
 #include "tusb_console.h"
@@ -95,21 +96,24 @@ static void storage_mount_changed(tinyusb_msc_event_t *event)
 {
     if (event->mount_changed_data.is_mounted) {
         ESP_LOGI(TAG, "Storage mounted");
-        gpio_set_level(CONFIG_BOARD_LED_GPIO, 0);
+        led_ready();
 
         flash_args_t *args = flash_args_find(CONFIG_TINYUSB_MSC_MOUNT_PATH);
-        flash_args_dump(args);
-        flash_args_free(args);
+        if (args != NULL) {
+            flash_args_dump(args);
+            flash_args_free(args);
+        } else {
+            led_error();
+        }
     } else {
         ESP_LOGI(TAG, "Storage unmounted");
-        gpio_set_level(CONFIG_BOARD_LED_GPIO, 1);
+        led_usb();
     }
 }
 
 void app_main(void)
 {
-    gpio_reset_pin(CONFIG_BOARD_LED_GPIO);
-    gpio_set_direction(CONFIG_BOARD_LED_GPIO, GPIO_MODE_OUTPUT);
+    led_init();
 
     ESP_LOGI(TAG, "Initializing storage...");
 
