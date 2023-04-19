@@ -20,8 +20,8 @@ static const blink_step_t led_usb_step[] = {
 };
 
 static const blink_step_t led_flash_step[] = {
-    {LED_BLINK_HOLD, LED_STATE_ON, 50},
-    {LED_BLINK_HOLD, LED_STATE_OFF, 50},
+    {LED_BLINK_HOLD, LED_STATE_ON, 200},
+    {LED_BLINK_HOLD, LED_STATE_OFF, 200},
     {LED_BLINK_LOOP, 0, 0},
 };
 
