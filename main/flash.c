@@ -12,7 +12,8 @@
 
 static const char *TAG = "flash";
 
-#define HIGHER_BAUDRATE 230400
+// #define HIGHER_BAUDRATE 230400
+#define HIGHER_BAUDRATE 0
 
 static esp_loader_error_t connect_to_target(uint32_t higher_transmission_rate)
 {
