@@ -4,7 +4,7 @@
 #include "tinyusb.h"
 #include "tusb_msc_storage.h"
 
-#ifdef CONFIG_ENABLE_CDC
+#ifdef CONFIG_TINYUSB_CDC_ENABLED
 #include "driver/gpio.h"
 #include "esp_private/periph_ctrl.h"
 #include "soc/rtc_cntl_reg.h"
@@ -22,7 +22,7 @@ static const char *TAG = "usb";
 static usb_cb_t chg_cb = NULL;
 
 /* TinyUSB descriptors ********************************* */
-#ifdef CONFIG_ENABLE_CDC
+#ifdef CONFIG_TINYUSB_CDC_ENABLED
 #define TUSB_DESC_TOTAL_LEN                                                    \
     (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_MSC_DESC_LEN)
 #else
@@ -30,7 +30,7 @@ static usb_cb_t chg_cb = NULL;
 #endif
 
 enum {
-#ifdef CONFIG_ENABLE_CDC
+#ifdef CONFIG_TINYUSB_CDC_ENABLED
     ITF_NUM_CDC = 0,
     ITF_NUM_CDC_DATA,
     ITF_NUM_MSC,
@@ -42,7 +42,7 @@ enum {
 
 enum {
     EP_EMPTY = 0,
-#ifdef CONFIG_ENABLE_CDC
+#ifdef CONFIG_TINYUSB_CDC_ENABLED
     EPNUM_0_CDC_NOTIF,
     EPNUM_0_CDC,
 #endif
@@ -55,7 +55,7 @@ static uint8_t const desc_configuration[] = {
     TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, TUSB_DESC_TOTAL_LEN,
                           TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
 
-#ifdef CONFIG_ENABLE_CDC
+#ifdef CONFIG_TINYUSB_CDC_ENABLED
     // Interface number, string index, EP notification address and size, EP data
     // address (out, in) and size.
     TUD_CDC_DESCRIPTOR(ITF_NUM_CDC, 4, 0x80 | EPNUM_0_CDC_NOTIF, 8, EPNUM_0_CDC,
@@ -90,8 +90,10 @@ static char const *string_desc_arr[] = {
     CONFIG_TINYUSB_DESC_MANUFACTURER_STRING, // 1: Manufacturer
     CONFIG_TINYUSB_DESC_PRODUCT_STRING,      // 2: Product
     CONFIG_TINYUSB_DESC_SERIAL_STRING,       // 3: Serials, should use chip ID
-#ifdef CONFIG_ENABLE_CDC
+#ifdef CONFIG_TINYUSB_CDC_ENABLED
     CONFIG_TINYUSB_DESC_CDC_STRING, // 4: CDC Interface
+#else
+    "",
 #endif
     CONFIG_TINYUSB_DESC_MSC_STRING, // 5: MSC Interface
     NULL // NULL: Must be last. Indicates end of array
@@ -128,7 +130,7 @@ static void storage_mount_changed(tinyusb_msc_event_t *event)
     }
 }
 
-#ifdef CONFIG_ENABLE_CDC
+#ifdef CONFIG_TINYUSB_CDC_ENABLED
 static void IRAM_ATTR usb_persist_shutdown_handler(void)
 {
 #if CONFIG_IDF_TARGET_ESP32S2
@@ -216,7 +218,7 @@ void usb_init(usb_cb_t chg)
         .configuration_descriptor = desc_configuration,
     };
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
-#ifdef CONFIG_ENABLE_CDC
+#ifdef CONFIG_TINYUSB_CDC_ENABLED
     tinyusb_config_cdcacm_t acm_cfg = {
         .rx_unread_buf_sz = CONFIG_TINYUSB_CDC_TX_BUFSIZE,
         .callback_line_state_changed = tinyusb_cdc_line_state_changed_callback,
