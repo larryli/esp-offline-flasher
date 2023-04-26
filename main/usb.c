@@ -2,9 +2,20 @@
 #include "esp_check.h"
 #include "esp_log.h"
 #include "tinyusb.h"
+#include "tusb_msc_storage.h"
+
+#ifdef CONFIG_ENABLE_CDC
+#include "driver/gpio.h"
+#include "esp_private/periph_ctrl.h"
+#include "soc/rtc_cntl_reg.h"
 #include "tusb_cdc_acm.h"
 #include "tusb_console.h"
-#include "tusb_msc_storage.h"
+#if CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/usb/chip_usb_dw_wrapper.h"
+#include "esp32s2/rom/usb/usb_dc.h"
+#include "esp32s2/rom/usb/usb_persist.h"
+#endif
+#endif
 
 static const char *TAG = "usb";
 
@@ -117,6 +128,66 @@ static void storage_mount_changed(tinyusb_msc_event_t *event)
     }
 }
 
+#ifdef CONFIG_ENABLE_CDC
+static void IRAM_ATTR usb_persist_shutdown_handler(void)
+{
+#if CONFIG_IDF_TARGET_ESP32S2
+    periph_module_reset(PERIPH_USB_MODULE);
+    periph_module_enable(PERIPH_USB_MODULE);
+#endif
+    REG_WRITE(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
+}
+
+static void usb_persist_restart(void)
+{
+    if (esp_register_shutdown_handler(usb_persist_shutdown_handler) == ESP_OK) {
+        esp_restart();
+    }
+}
+
+static void tinyusb_cdc_line_state_changed_callback(int itf,
+                                                    cdcacm_event_t *event)
+{
+    static int lineState = 0;
+    static bool dtr = false, rts = false;
+
+    if (dtr == event->line_state_changed_data.dtr &&
+        rts == event->line_state_changed_data.rts) {
+        return; // Skip duplicate events
+    }
+    dtr = event->line_state_changed_data.dtr;
+    rts = event->line_state_changed_data.rts;
+
+    if (!dtr && rts) {
+        if (lineState == 0) {
+            lineState++;
+        } else {
+            lineState = 0;
+        }
+    } else if (dtr && rts) {
+        if (lineState == 1) {
+            lineState++;
+        } else {
+            lineState = 0;
+        }
+    } else if (dtr && !rts) {
+        if (lineState == 2) {
+            lineState++;
+        } else {
+            lineState = 0;
+        }
+    } else if (!dtr && !rts) {
+        if (lineState == 1) {
+            esp_restart(); // Monitor
+        } else if (lineState == 3) {
+            usb_persist_restart(); // Flash
+        } else {
+            lineState = 0;
+        }
+    }
+}
+#endif
+
 void usb_init(usb_cb_t chg)
 {
     ESP_LOGI(TAG, "Initializing storage...");
@@ -147,7 +218,9 @@ void usb_init(usb_cb_t chg)
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 #ifdef CONFIG_ENABLE_CDC
     tinyusb_config_cdcacm_t acm_cfg = {
-        0}; // the configuration uses default values
+        .rx_unread_buf_sz = CONFIG_TINYUSB_CDC_TX_BUFSIZE,
+        .callback_line_state_changed = tinyusb_cdc_line_state_changed_callback,
+    };
     ESP_ERROR_CHECK(tusb_cdc_acm_init(&acm_cfg));
 
     esp_tusb_init_console(TINYUSB_CDC_ACM_0); // log to usb
