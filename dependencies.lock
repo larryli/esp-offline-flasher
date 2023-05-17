@@ -18,12 +18,11 @@ dependencies:
       type: service
     version: 0.0.8
   espressif/esp_tinyusb:
-    component_hash: 4d5c0bdd27386cfafeca6f3d0d8edc44b24218e555b0784a491a47cc13b6a95c
+    component_hash: 444bd4429bbd2d93b99c1735ccbeff423d18bf632cba17072ec20384786afa5e
     source:
-      git: https://github.com/larryli/idf-extra-components.git
-      path: usb/esp_tinyusb
-      type: git
-    version: 8849aede8307028b283194ab838bbed469ecf7ba
+      service_url: https://api.components.espressif.com/
+      type: service
+    version: 1.2.1
   espressif/led_indicator:
     component_hash: daa844acf7886b78fa4ea25c9dd6a4fb3a83f793a307187026be1c237fba632a
     source:
@@ -41,6 +40,6 @@ dependencies:
     source:
       type: idf
     version: 5.0.1
-manifest_hash: 65a567719445b483db35e8dcb6b86c5a2c4a0e9e949bb2e31e8b255fe14e1ee7
+manifest_hash: a22f63b7abd9fb777b42a1e364c644a9b0c80b95894e4a1e97cf90982a9279d1
 target: esp32s2
 version: 1.0.0

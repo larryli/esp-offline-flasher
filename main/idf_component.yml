@@ -2,8 +2,6 @@
 dependencies:
   espressif/button: "^2.5.1"
   espressif/led_indicator: "^0.3.0"
-  espressif/esp_tinyusb:
-    path: usb/esp_tinyusb
-    git: https://github.com/larryli/idf-extra-components.git
+  espressif/esp_tinyusb: "^1.2.1"
   espressif/esp-serial-flasher: "^0.0.8"
   idf: "^5.0"
